@@ -7,6 +7,11 @@ const port = 3000;
 
 const app = express();
 
+app.get('*.js', (req, res, next) => {
+  req.url = req.url + '.gz';
+  res.set('Content-Encoding', 'gzip');
+  next();
+});
 app.use(cors());
 app.use('/', express.static('public'));
 app.use('/:gameId', express.static('public'));

@@ -45,7 +45,7 @@ class App extends React.Component {
   }
 
   getGameData() {
-    axios.get(`${prodEndpoint}/api/overview/${this.state.gameId}`)
+    axios.get(`/api/overview/${this.state.gameId}`)
       .then((res) => {
         // handle data
         this.setState({
@@ -57,12 +57,13 @@ class App extends React.Component {
         })
       })
       .catch((err) => {
+        console.log(`/api/overview/${this.state.gameId}`)
         console.log('error in overview get request in client', err);
       });
   }
 
   getImage() {
-    axios.get(`http://ec2-13-57-33-155.us-west-1.compute.amazonaws.com/api/overviewImage/${this.state.gameId}`)
+    axios.get(`/api/overviewImage/${this.state.gameId}`)
       .then((res) => {
         // handle data
         if (res.data !== undefined) {
@@ -75,7 +76,7 @@ class App extends React.Component {
   }
 
   getReviews() {
-    axios.get(`http://ec2-54-183-55-106.us-west-1.compute.amazonaws.com/api/reviews/1`)
+    axios.get(`/api/reviews/1`)
     .then((data) => {
       this.setState({
         totalReviews: data.data

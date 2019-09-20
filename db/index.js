@@ -5,9 +5,9 @@ console.log('devDb, prodDb, nodeEnv', devDb, prodDb, nodeEnv);
 
 
 if (nodeEnv === 'development') {
-  mongoose.connect(`mongodb://${devDb}/overview`, { useNewUrlParser: true });
+  mongoose.connect(`mongodb://localhost:27017/overview`, { useNewUrlParser: true });
 } else {
-  mongoose.connect(`mongodb://${prodDb}/overview`, { useNewUrlParser: true });
+  mongoose.connect(`mongodb://localhost:27017/overview`, { useNewUrlParser: true });
 }
 
 let db = mongoose.connection;

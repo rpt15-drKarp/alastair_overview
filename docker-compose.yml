@@ -9,9 +9,10 @@ services:
     ports:
       - '80:3000'
     environment:
-      - NODE_ENV=production
-      - PROD_API_URL=http://ec2-18-144-35-234.us-west-1.compute.amazonaws.com
+      - NODE_ENV=development
+      - PROD_API_URL=localhost:80
       - PROD_DB_HOST=database
+      - DEV_DB_HOST=database
 
   database:
     image: mongo:latest

@@ -1,0 +1,139 @@
+* Project Specifications
+
+The goal of this project is to explore system design by inheriting a front end focused project from another team and scaling it. The inherited project used Mongo to serve 100 records and needed to be scaled to handle 10 million records with at least 1000 requests per second (RPS) with the goal of hitting 10,000 RPS. The inherited project had four separate services and a proxy service.
+
+** Inherited Project
+
+The project I inherited was a clone of a game landing page on [[https://store.steampowered.com/][Steam]].
+
+#+CAPTION: An example game landing page on Steam.
+#+NAME:   fig:Steam Screenshot
+[[./steam_screenshot.png]]
+
+*** Components
+
+There are four components:
+  1. An overview of the game on the top right (my service)
+  2. A photo carousel on the top middle of the page
+  3. Information about the game below the carousel
+  4. Reviews for the game below the game information
+
+*** The Overview Component
+
+It utilizes the reviews component to display an overall user feeling for the game ranging from Overwhelmingly Positive to Overwhelmingly Negative as well as general information such as the devloper and user tags.
+
+Tech stack for this component:
+ - Server:node
+ - Package management: npm
+ - Client: react, webpack, babel
+ - DB: Cassandra / Postgres
+ - Testing: jest
+ - Deployment: Docker, docker-compose
+
+The component had a seeding script for adding 100 records to a Mongo database which I modified to seed millions to either Cassandra or Postgres databases.
+
+It defines a single endpoint ~/api/overview/:gameId~ which origininallyonly supported a get. In order to fully explore the databases I updated the endpoint to support full CRUD operations using GET, POST, PUT, DELETE.
+
+**** Build Process
+
+Building and deployment is done using docker-compose.
+
+The docker-compose.yml file defines the build process for the component and database containers and defines the following environment variables:
+
+| ENV VAR      | DESCRIPTION                         | VALUES                  |
+|--------------+-------------------------------------+-------------------------|
+| NODE_ENV     | Specifies which database URI to use | production, development |
+| PROD_DB_HOST | Production database URI             | defaults to localhost   |
+| PROD_API_URL | Production server URI               | defaults to localhost   |
+
+Run ~docker-compose up~ and navigate to localhost in your browser. The service maps port 80 to the component container's port 3000. 
+
+** Related Projects
+
+Proxy Service: https://github.com/rpt15-drKarp/stephen_proxy
+
+Teammates Servies:
+https://github.com/rpt15-drKarp/Richard_Reviews
+https://github.com/rpt15-drKarp/stephen_photoCarousel
+https://github.com/rpt15-drKarp/Therese_aboutGame
+
+* Database Choices
+
+Before trying to scale the backend it was important to choose a database. My service used Mongo, which I have used quite a bit, so I decided to explore two others before making a final choice.
+
+After checking job listings in my area, MySQL and PostgreSQL came up the most, so I wanted to use at least one. PostgreSQL supports arrays and MySQL does not --at least not directly-- which simplifies the schema I would need to design for the overview component.
+
+I have heard lots of Cassandra hate/grief from my peers but also know senior software engineers who love it. I chose it simply because I want to see for myself.
+
+Final Choices:
+Option 1: PostgreSQL
+Option 2: Cassandra
+
+* Development Journal
+
+This sections describes my process and results for this project.
+
+** Local Database Testing
+
+*** DONE Refactor to build on a local machine.
+
+Changed PROD_DB_HOST to localhost and refactored hard coded referenses to AWS services out.
+
+*** IMPLEMENT Implement CRUD services for the endpoint [0/3]
+   - [ ] Post
+   - [ ] Delete
+   - [ ] Put
+
+*** IMPLEMENT Setup Cassandra container for docker-compose
+
+*** IMPLEMENT Connect to the Cassandra container from the server
+
+*** IMPLEMENT Setup Postgres container for docker compose
+
+*** IMPLEMENT Connect to the Postgres container from the server
+
+*** IMPLEMENT Modify seeding script to store 10 million records [0%]
+    - [ ] Modular function for generating 10 million records
+    - [ ] Cassandra save script
+    - [ ] Postgres save script
+
+*** TEST Ensure API responds within 50ms
+
+*** RESEARCH DBMS benchmarking
+
+*** IMPLEMENT Stress test using New Relic to monitor
+
+| DBMS      | ROUTE |  RPS | LATENCY | ERROR RATE |
+|-----------+-------+------+---------+------------|
+| Cassandra | GET   |    1 |         |            |
+| Cassandra | GET   |   10 |         |            |
+| Cassandra | GET   |  100 |         |            |
+| Cassandra | GET   | 1000 |         |            |
+| Cassandra | POST  |    1 |         |            |
+| Cassandra | POST  |   10 |         |            |
+| Cassandra | POST  |  100 |         |            |
+| Cassandra | POST  | 1000 |         |            |
+| Postgres  | GET   |    1 |         |            |
+| Postgres  | GET   |   10 |         |            |
+| Postgres  | GET   |  100 |         |            |
+| Postgres  | GET   | 1000 |         |            |
+| Postgres  | POST  |    1 |         |            |
+| Postgres  | POST  |   10 |         |            |
+| Postgres  | POST  |  100 |         |            |
+| Postgres  | POST  | 1000 |         |            |
+
+*** RESEARCH Choose DBMS to move forward with
+
+** Deployment
+
+*** Deploy service
+
+*** Deploy proxy
+
+*** Seed deployed database
+
+*** Stress test service
+
+*** Stress test proxy
+
+** Scale the service
