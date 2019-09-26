@@ -6,9 +6,7 @@ The goal of this project is to explore system design by inheriting a front end f
 
 The project I inherited was a clone of a game landing page on [[https://store.steampowered.com/][Steam]].
 
-#+CAPTION: An example game landing page on Steam.
-#+NAME:   fig:Steam Screenshot
-[[/steam_screenshot.png]]
+#+html: <p align="center"><img src="steam_screenshot.png" /></p>
 
 *** Components
 
@@ -32,7 +30,7 @@ Tech stack for this component:
 
 The component had a seeding script for adding 100 records to a Mongo database which I modified to seed millions to either Cassandra or Postgres databases.
 
-It defines a single endpoint ~/api/overview/:gameId~ which origininallyonly supported a get. In order to fully explore the databases I updated the endpoint to support full CRUD operations using GET, POST, PUT, DELETE.
+It defines a single endpoint ~/api/overview/:gameId~ which origininally only supported a get. In order to fully explore the databases I updated the endpoint to support full CRUD operations using GET, POST, PUT, DELETE.
 
 **** Build Process
 
@@ -53,9 +51,9 @@ Run ~docker-compose up~ and navigate to localhost in your browser. The service m
 Proxy Service: https://github.com/rpt15-drKarp/stephen_proxy
 
 Teammates Servies:
-https://github.com/rpt15-drKarp/Richard_Reviews
-https://github.com/rpt15-drKarp/stephen_photoCarousel
-https://github.com/rpt15-drKarp/Therese_aboutGame
+ - https://github.com/rpt15-drKarp/Richard_Reviews
+ - https://github.com/rpt15-drKarp/stephen_photoCarousel
+ - https://github.com/rpt15-drKarp/Therese_aboutGame
 
 * Database Choices
 
@@ -66,8 +64,8 @@ After checking job listings in my area, MySQL and PostgreSQL came up the most, s
 I have heard lots of Cassandra hate/grief from my peers but also know senior software engineers who love it. I chose it simply because I want to see for myself.
 
 Final Choices:
-Option 1: PostgreSQL
-Option 2: Cassandra
+ 1. PostgreSQL
+ 2.  Cassandra
 
 * Development Journal
 
@@ -77,7 +75,7 @@ This sections describes my process and results for this project.
 
 *** DONE Refactor to build on a local machine.
 
-Changed PROD_DB_HOST to localhost and refactored hard coded referenses to AWS services out.
+Changed PROD_DB_HOST to localhost and refactored hard coded referenses to AWS services out of the client.
 
 *** IMPLEMENT Implement CRUD services for the endpoint [0/3]
    - [ ] Post
