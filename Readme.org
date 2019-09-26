@@ -84,13 +84,32 @@ Changed PROD_DB_HOST to localhost and refactored hard coded referenses to AWS se
    - [ ] Delete
    - [ ] Put
 
-*** IMPLEMENT Setup Cassandra container for docker-compose
+*** DONE Setup Cassandra locally
 
-*** IMPLEMENT Connect to the Cassandra container from the server
+Install process for Fedora via ~dnf~
+ 1. Run ~dnf install cassandra cassandra-server~
+ 2. Run ~systemctl start cassandra~
+ 3. Run ~systemctl enable cassandra~
 
-*** IMPLEMENT Setup Postgres container for docker compose
+Manually connect by running ~cqlsh~. 
 
-*** IMPLEMENT Connect to the Postgres container from the server
+Initially did not run ~systemctl start cassandra~ and could not connect via cqlsh. ~systemctl enable~ will automatically start the process on a reboot but not for the current session. The shell gave a very helpful message about not finding any servers to connect to. +1 for the helpful error.
+
+*** IMPLEMENT Connect to the Cassandra from the server
+
+*** DONE Setup Postgres locally
+
+Install process for Fedora via dnf:
+ 1. Run ~dnf install postgresql-server postgresql-contrib~
+ 2. Run ~postgresql-setup --initdb --unit postgresql~
+ 3. Run ~systemctl enable postgresql~
+ 4. Run ~systemctl start postgresql~
+
+Manually connect to Postgres by running ~psql~.
+
+I initially did not have step 2 and I tried to start the postgresql service but it would not run. Checking journalctl showed that it failed to start the database server. Some quick Googling revealed that I needed to setup the database by creating a data directory, setting the ownership to the postgres user, and initializing the database as the postgres user. Turns out there is also a Fedora package called ~postgresql-setup~ which can be used to do the same thing which is installed along with Postgres. I opted for the package.
+
+*** IMPLEMENT Connect to the Postgres from the server
 
 *** IMPLEMENT Modify seeding script to store 10 million records [0%]
     - [ ] Modular function for generating 10 million records
