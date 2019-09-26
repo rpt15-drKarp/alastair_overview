@@ -8,7 +8,7 @@ The project I inherited was a clone of a game landing page on [[https://store.st
 
 #+CAPTION: An example game landing page on Steam.
 #+NAME:   fig:Steam Screenshot
-[[./steam_screenshot.png]]
+[[/steam_screenshot.png]]
 
 *** Components
 
