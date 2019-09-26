@@ -26,6 +26,48 @@ app.get(`/api/overview/:gameId`, (req, res) => {
   });
 });
 
+app.post('/api/overview/', (req, res) => {
+  console.log('got to overview post request in server');
+  db.save(req.body).then((result) => {
+    if (!result) {
+      res.status(400);
+      res.send('Malformed request');
+    } else {
+      res.status(201);
+      res.set('Location', `/api/overview/${result.game_id}`);
+      res.send("Successfuly created game overview.");
+    }
+  }).catch((err) => {
+    res.status(500);
+    res.send('Unable to save to database: ', err);
+  })
+});
+
+app.put(`/api/overview/:gameId`, (req, res) => {
+  console.log('got to overview put request in server');
+  db.update(req.params.gameId, req.body).then((results) => {
+    res.sendStatus(200)
+  }).catch((err) => {
+    console.error(err)
+    res.sendStatus(500)
+  })
+});
+
+app.delete(`/api/overview/:gameId`, (req, res) => {
+  console.log('got to overview delete request in server');
+  db.remove(req.params.gameId).then((results) => {
+    if (!results) {
+      res.sendStatus(404)
+    } else {
+      res.sendStatus(200)
+    }
+  }).catch((err) => {
+    console.error(err)
+    res.sendStatus(500)
+  })
+});
+
+
 app.listen(port, () => {
   console.log(`App listening on ${port}`);
 });

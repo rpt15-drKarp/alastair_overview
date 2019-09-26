@@ -79,10 +79,22 @@ This sections describes my process and results for this project.
 
 Changed PROD_DB_HOST to localhost and refactored hard coded referenses to AWS services out of the client.
 
-*** IMPLEMENT Implement CRUD services for the endpoint [0/3]
-   - [ ] Post
-   - [ ] Delete
-   - [ ] Put
+Updated tests to pass for the schema in use. The response from the /api/overview/:gameID endpoint is an array with a single object which I did not expect. I did not change this to prevent breaking compatibility with the other components who consume this API.
+
+Client test failed to run because of a parsing error with Babel.
+
+*** DONE Implement CRUD services for the endpoint [3/3]
+   - [X] Post -> Set location header to the GET endpoint for the new record
+   - [X] Delete
+   - [X] Put
+
+Use with endpoint:
+ - Post -> /api/overview
+ - Delete -> /api/overview/:gameId
+ - Put -> /api/overview/:gameId
+
+Used promise based api from Mongoose for brevity for the additional database methods despite the inhertied code using callbacks. The inherited code uses a callback to send messages to the client from the database module but doesn't set the appropriate headers and doesn't set status codes for errors. Since getting the callbacks to work isn't required for my work I will ignore them.
+
 
 *** DONE Setup Cassandra locally
 

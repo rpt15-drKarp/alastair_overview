@@ -30,12 +30,14 @@ const OverviewSchema = new mongoose.Schema({
 const Overview = mongoose.model('Overview', OverviewSchema);
 
 const save = (gameInfo) => {
-  let game = new Overview(gameInfo);
-  game.save((err) => {
-    if (err) {
-      console.log('error while saving to db', err);
-    }
-  });
+  // let game = new Overview(gameInfo);
+  // game.save((err) => {
+  //   if (err) {
+  //     console.log('error while saving to db', err);
+  //   }
+  // });
+
+  return new Overview(gameInfo).save()
 };
 
 const retrieve = (gameId, sendToClient) => {
@@ -62,6 +64,16 @@ const count = (log) => {
     })
 };
 
+const update = (gameInfo) => {
+  return Overview.findOneAndUpdate({ game_id: gameInfo.game_id }, gameInfo)
+}
+
+const remove = (gameId) => {
+  return Overview.findOneAndDelete({ game_id: gameId })
+}
+
 module.exports.save = save;
 module.exports.retrieve = retrieve;
 module.exports.count = count;
+module.exports.update = update;
+module.exports.remove = remove;
