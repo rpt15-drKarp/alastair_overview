@@ -18,6 +18,8 @@ There are four components:
 
 *** The Overview Component
 
+#+html: <p align="center"><img src="overview_screenshot.png" /></p>
+
 It utilizes the reviews component to display an overall user feeling for the game ranging from Overwhelmingly Positive to Overwhelmingly Negative as well as general information such as the devloper and user tags.
 
 Tech stack for this component:
