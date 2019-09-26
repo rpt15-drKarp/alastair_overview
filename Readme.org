@@ -1,3 +1,32 @@
+* Table of Contents                                                   :TOC_5:
+- [[#project-specifications][Project Specifications]]
+  - [[#inherited-project][Inherited Project]]
+    - [[#components][Components]]
+    - [[#the-overview-component][The Overview Component]]
+      - [[#build-process][Build Process]]
+  - [[#related-projects][Related Projects]]
+- [[#database-choices][Database Choices]]
+- [[#development-journal][Development Journal]]
+  - [[#local-database-testing][Local Database Testing]]
+    - [[#refactor-to-build-on-a-local-machine][Refactor to build on a local machine.]]
+    - [[#implement-crud-services-for-the-endpoint-33][Implement CRUD services for the endpoint]]
+    - [[#setup-cassandra-locally][Setup Cassandra locally]]
+    - [[#implement-connect-to-the-cassandra-from-the-server][IMPLEMENT Connect to the Cassandra from the server]]
+    - [[#setup-postgres-locally][Setup Postgres locally]]
+    - [[#implement-connect-to-the-postgres-from-the-server][IMPLEMENT Connect to the Postgres from the server]]
+    - [[#implement-modify-seeding-script-to-store-10-million-records-0][IMPLEMENT Modify seeding script to store 10 million records]]
+    - [[#test-ensure-api-responds-within-50ms][TEST Ensure API responds within 50ms]]
+    - [[#research-dbms-benchmarking][RESEARCH DBMS benchmarking]]
+    - [[#implement-stress-test-using-new-relic-to-monitor][IMPLEMENT Stress test using New Relic to monitor]]
+    - [[#research-choose-dbms-to-move-forward-with][RESEARCH Choose DBMS to move forward with]]
+  - [[#deployment][Deployment]]
+    - [[#deploy-service][Deploy service]]
+    - [[#deploy-proxy][Deploy proxy]]
+    - [[#seed-deployed-database][Seed deployed database]]
+    - [[#stress-test-service][Stress test service]]
+    - [[#stress-test-proxy][Stress test proxy]]
+  - [[#scale-the-service][Scale the service]]
+
 * Project Specifications
 
 The goal of this project is to explore system design by inheriting a front end focused project from another team and scaling it. The inherited project used Mongo to serve 100 records and needed to be scaled to handle 10 million records with at least 1000 requests per second (RPS) with the goal of hitting 10,000 RPS. The inherited project had four separate services and a proxy service.
@@ -111,13 +140,13 @@ Install process for Fedora via ~dnf~
 
 Manually connect by running ~cqlsh~. 
 
-Initially did not run ~systemctl start cassandra~ and could not connect via cqlsh. ~systemctl enable~ will automatically start the process on a reboot but not for the current session. The shell gave a very helpful message about not finding any servers to connect to. +1 for the helpful error.
+I initially did not run ~systemctl start cassandra~ and could not connect via cqlsh. ~systemctl enable~ will automatically start the process on a reboot but not for the current session. The shell gave a very helpful message about not finding any servers to connect to. +1 for the helpful error.
 
 *** IMPLEMENT Connect to the Cassandra from the server
 
 *** DONE Setup Postgres locally
 
-Install process for Fedora via dnf:
+Install process for Fedora via ~dnf~:
  1. Run ~dnf install postgresql-server postgresql-contrib~
  2. Run ~postgresql-setup --initdb --unit postgresql~
  3. Run ~systemctl enable postgresql~
