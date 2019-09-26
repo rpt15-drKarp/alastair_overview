@@ -23,7 +23,7 @@ There are four components:
 It utilizes the reviews component to display an overall user feeling for the game ranging from Overwhelmingly Positive to Overwhelmingly Negative as well as general information such as the devloper and user tags.
 
 Tech stack for this component:
- - Server:node
+ - Server: node
  - Package management: npm
  - Client: react, webpack, babel
  - DB: Cassandra / Postgres
@@ -32,7 +32,7 @@ Tech stack for this component:
 
 The component had a seeding script for adding 100 records to a Mongo database which I modified to seed millions to either Cassandra or Postgres databases.
 
-It defines a single endpoint ~/api/overview/:gameId~ which origininally only supported a get. In order to fully explore the databases I updated the endpoint to support full CRUD operations using GET, POST, PUT, DELETE.
+It defines a single endpoint ~/api/overview/:gameId~ which origininally only supported GET requests. In order to fully explore the databases I updated the endpoint to support full CRUD operations using GET, POST, PUT, DELETE http methods.
 
 **** Build Process
 
@@ -47,6 +47,12 @@ The docker-compose.yml file defines the build process for the component and data
 | PROD_API_URL | Production server URI               | defaults to localhost   |
 
 Run ~docker-compose up~ and navigate to localhost in your browser. The service maps port 80 to the component container's port 3000. 
+
+Building locally can be done by cloning the repository and running the following commands:
+ 1. ~npm install~
+ 2. ~npm run db:setup~ to seed the database. Requires ~mongod~ running.
+ 3. ~npm run start~ and navigate to localhost:300
+ 4. If making changes run ~npm run build~ to rebuild the bundle.
 
 ** Related Projects
 
