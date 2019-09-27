@@ -188,7 +188,12 @@ I exported this schema to a file for a quicker setup later by running ~cqlsh -e 
 
 Cassandra can be connected to from Node using the [[https://www.npmjs.com/package/cassandra-driver][cassandra-driver]] package.
 
-I had to specify the contact point to connect to which I found by running ~nodetool status~ as root and looking for the rack name.
+The client connection requires three paramaters.
+ 1. The contact points which I found by running ~nodetool status~ as root and looking for the host address.
+ 2. The local data center which [[https://stackoverflow.com/questions/19489498/getting-cassandra-datacenter-name-in-cqlsh][StackOverflow]] informed me I can find by going into the cqlsh and running ~use system;~ followed by ~select data_center from local;~.
+ 3. The keyspace name
+
+Queries are stored as string and passed as parameters to the execute function of the client object. Mutliple parameters must be passed as an array and named paramters require preparing the query by passing ~{ prepare: true }~ after the paramters. Preparing the query allows for converting Javscript objects to a Cassandra type.
 
 *** DONE Setup Postgres locally
 
@@ -201,6 +206,8 @@ Install process for Fedora via ~dnf~:
 Manually connect to Postgres by running ~psql~.
 
 I initially did not have step 2 and I tried to start the postgresql service but it would not run. Checking journalctl showed that it failed to start the database server. Some quick Googling revealed that I needed to setup the database by creating a data directory, setting the ownership to the postgres user, and initializing the database as the postgres user. Turns out there is also a Fedora package called ~postgresql-setup~ which can be used to do the same thing which is installed along with Postgres. I opted for the package.
+
+Inserting with an existing primary key updates the row.
 
 *** IMPLEMENT Connect to the Postgres from the server
 

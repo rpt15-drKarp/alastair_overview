@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+/*const mongoose = require('mongoose');
 const { devDb, prodDb, nodeEnv } = require('../config.js');
 
 console.log('devDb, prodDb, nodeEnv', devDb, prodDb, nodeEnv);
@@ -70,7 +70,46 @@ const update = (gameInfo) => {
 
 const remove = (gameId) => {
   return Overview.findOneAndDelete({ game_id: gameId })
+}*/
+
+const cassandra = require('cassandra-driver')
+const client = new cassandra.Client({ contactPoints: ['127.0.0.1'], localDataCenter: 'datacenter1', keyspace: 'overviews' })
+
+client.connect().then(() => console.log('Connected to Cassandra.'))
+
+const saveQuery = 'INSERT INTO overview (game_id, game) VALUES (?, ?)'
+
+const testGame = {
+  game_id: 1,
+  game_name: 'Stardew_Valley',
+  description: 'faker.lorem.paragraph()',
+  release_date: 'faker.date.past().toISOString()',
+  developer: 'faker.company.companyName()',
+  publisher: 'faker.company.companyName()',
+  tags: ['tag1', 'tag2', 'tag3']
 }
+
+const save = (gameInfo) => {
+  return client.execute(saveQuery, [gameInfo.game_id, gameInfo], { prepare: true })
+}
+
+const count = () => {
+  //
+}
+
+const retrieve = () => {
+  //
+}
+
+const update = () => {
+  //
+}
+
+const remove = () => {
+  //
+}
+
+save(testGame).then((result) => console.log(result))
 
 module.exports.save = save;
 module.exports.retrieve = retrieve;
