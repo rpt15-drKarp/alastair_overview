@@ -92,7 +92,7 @@ Teammates Servies:
  - https://github.com/rpt15-drKarp/Richard_Reviews
  - https://github.com/rpt15-drKarp/stephen_photoCarousel
  - https://github.com/rpt15-drKarp/Therese_aboutGame
-qq
+
 * Database Choices
 
 Before trying to scale the backend it was important to choose a database. My service used Mongo, which I have used quite a bit, so I decided to explore two others before making a final choice.
@@ -114,7 +114,7 @@ Terminology and concepts
  - Cluster: A collection of nodes (possibly machines). I will only use one to start.
  - Replication factor: Defined in the keyspace, determines how many nodes act as copies of each row. Higher values mean more consistency but less performance.
  - Replication strategy: Defines how replicas will be placed. SimpleStrategy is used most often when nodes are on a single data center.
- - UDT: User defined types that usually have to be frozen when used in a table.
+ - UDT: User defined types that usually have to be frozen when used in a table. Frozen types are serialzied into a single value and cannot be partially updated. Non-frozen types can have their individual fields updated independtly. I suspect a frozen UDT will improve performance on the host but decrease performance on the client.
 
 One needs to use ~cqlsh~ to create keyspaces and tables. Instead of manually running the commands to setup a keyspace on a new system, you can run ~cqlsh -e "DESCRIBE KEYSPACE" > schema.cql~ to dump the ocommands to create the keysapce named by "KEYSPACE" to a file named schema.cql. To later setup that keyspace on a new environment run ~source schema.cql~.
 
