@@ -6,6 +6,7 @@
       - [[#build-process][Build Process]]
   - [[#related-projects][Related Projects]]
 - [[#database-choices][Database Choices]]
+    - [[#cassandra][Cassandra]]
 - [[#development-journal][Development Journal]]
   - [[#local-database-testing][Local Database Testing]]
     - [[#refactor-to-build-on-a-local-machine][Refactor to build on a local machine.]]
@@ -14,7 +15,7 @@
     - [[#implement-connect-to-the-cassandra-from-the-server][IMPLEMENT Connect to the Cassandra from the server]]
     - [[#setup-postgres-locally][Setup Postgres locally]]
     - [[#implement-connect-to-the-postgres-from-the-server][IMPLEMENT Connect to the Postgres from the server]]
-    - [[#implement-modify-seeding-script-to-store-10-million-records-0][IMPLEMENT Modify seeding script to store 10 million records]]
+    - [[#implement-modify-seeding-script-to-store-10-million-records-03][IMPLEMENT Modify seeding script to store 10 million records]]
     - [[#test-ensure-api-responds-within-50ms][TEST Ensure API responds within 50ms]]
     - [[#research-dbms-benchmarking][RESEARCH DBMS benchmarking]]
     - [[#implement-stress-test-using-new-relic-to-monitor][IMPLEMENT Stress test using New Relic to monitor]]
@@ -91,7 +92,7 @@ Teammates Servies:
  - https://github.com/rpt15-drKarp/Richard_Reviews
  - https://github.com/rpt15-drKarp/stephen_photoCarousel
  - https://github.com/rpt15-drKarp/Therese_aboutGame
-
+qq
 * Database Choices
 
 Before trying to scale the backend it was important to choose a database. My service used Mongo, which I have used quite a bit, so I decided to explore two others before making a final choice.
@@ -102,7 +103,19 @@ I have heard lots of Cassandra hate/grief from my peers but also know senior sof
 
 Final Choices:
  1. PostgreSQL
- 2.  Cassandra
+ 2. Cassandra
+
+*** Cassandra
+
+A distributed system with data replication for increased consistency. Looks like multiple copies of the data can be distributed lcoally or on multiple machines. A read then checks all copies and can compensate for bad data by comparing the responses. 
+
+Terminology and concepts
+ - Keyspace: The outermost container for data. Defines the properties that apply to the behavior of alll tables contained in the keyspace.
+ - Replication factor: Defined in the keyspace, determines how many nodes act as copies of each row. Higher values mean more consistency but less performance.
+ - Replication strategy: Defines how replicas will be placed. SimpleStrategy is used most often when nodes are on a single data center.
+ - UDT: User defined types that usually have to be frozen when used in a table.
+
+One needs to use ~cqlsh~ to create keyspaces and tables. Instead of manually running the commands to setup a new system, you can run ~cqlsh -e "DESCRIBE KEYSPACE" > schema.cql~ to dump the ocommands to create the keysapce named by "KEYSPACE" to a file named schema.cql. To later setup that keyspace on a new environment run ~source schema.cql~.
 
 * Development Journal
 
@@ -129,7 +142,6 @@ Use with endpoint:
  - Put -> /api/overview/:gameId
 
 Used promise based api from Mongoose for brevity for the additional database methods despite the inhertied code using callbacks. The inherited code uses a callback to send messages to the client from the database module but doesn't set the appropriate headers and doesn't set status codes for errors. Since getting the callbacks to work isn't required for my work I will ignore them.
-
 
 *** DONE Setup Cassandra locally
 
@@ -158,7 +170,7 @@ I initially did not have step 2 and I tried to start the postgresql service but 
 
 *** IMPLEMENT Connect to the Postgres from the server
 
-*** IMPLEMENT Modify seeding script to store 10 million records [0%]
+*** IMPLEMENT Modify seeding script to store 10 million records [0/3]
     - [ ] Modular function for generating 10 million records
     - [ ] Cassandra save script
     - [ ] Postgres save script
