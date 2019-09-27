@@ -111,11 +111,12 @@ A distributed system with data replication for increased consistency. Looks like
 
 Terminology and concepts
  - Keyspace: The outermost container for data. Defines the properties that apply to the behavior of alll tables contained in the keyspace.
+ - Cluster: A collection of nodes (possibly machines). I will only use one to start.
  - Replication factor: Defined in the keyspace, determines how many nodes act as copies of each row. Higher values mean more consistency but less performance.
  - Replication strategy: Defines how replicas will be placed. SimpleStrategy is used most often when nodes are on a single data center.
  - UDT: User defined types that usually have to be frozen when used in a table.
 
-One needs to use ~cqlsh~ to create keyspaces and tables. Instead of manually running the commands to setup a new system, you can run ~cqlsh -e "DESCRIBE KEYSPACE" > schema.cql~ to dump the ocommands to create the keysapce named by "KEYSPACE" to a file named schema.cql. To later setup that keyspace on a new environment run ~source schema.cql~.
+One needs to use ~cqlsh~ to create keyspaces and tables. Instead of manually running the commands to setup a keyspace on a new system, you can run ~cqlsh -e "DESCRIBE KEYSPACE" > schema.cql~ to dump the ocommands to create the keysapce named by "KEYSPACE" to a file named schema.cql. To later setup that keyspace on a new environment run ~source schema.cql~.
 
 * Development Journal
 
@@ -154,7 +155,40 @@ Manually connect by running ~cqlsh~.
 
 I initially did not run ~systemctl start cassandra~ and could not connect via cqlsh. ~systemctl enable~ will automatically start the process on a reboot but not for the current session. The shell gave a very helpful message about not finding any servers to connect to. +1 for the helpful error.
 
+I connected to Cassandra through ~cqlsh~ and setup a new keyspace by running:
+
+ - ~CREATE KEYSPACE overviews WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '3'}~ SimpleStrategy because I will only be using one node and replication factor 3 because I think anything less defeats the point of Cassandra. I may have to come back to this.
+
+I created a new UDT for an overview so that I can easily pull this out as a javascript object later.
+
+#+BEGIN_SRC cql
+CREATE TYPE overviews.overview (
+    game_id int,
+    game_name text,
+    description text,
+    release_date text,
+    developer text,
+    publisher text,
+    tags list<text>
+);
+#+END_SRC
+
+I then defined a new table to store my rows.
+
+#+BEGIN_SRC cql
+CREATE TABLE overviews.overview (
+    game_id int PRIMARY KEY,
+    game frozen<overview>
+);
+#+END_SRC
+
+I exported this schema to a file for a quicker setup later by running ~cqlsh -e "DESCRIBE overviews" > overviews.cql~.
+
 *** IMPLEMENT Connect to the Cassandra from the server
+
+Cassandra can be connected to from Node using the [[https://www.npmjs.com/package/cassandra-driver][cassandra-driver]] package.
+
+I had to specify the contact point to connect to which I found by running ~nodetool status~ as root and looking for the rack name.
 
 *** DONE Setup Postgres locally
 
