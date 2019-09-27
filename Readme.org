@@ -12,7 +12,7 @@
     - [[#refactor-to-build-on-a-local-machine][Refactor to build on a local machine.]]
     - [[#implement-crud-services-for-the-endpoint-33][Implement CRUD services for the endpoint]]
     - [[#setup-cassandra-locally][Setup Cassandra locally]]
-    - [[#implement-connect-to-the-cassandra-from-the-server][IMPLEMENT Connect to the Cassandra from the server]]
+    - [[#connect-to-the-cassandra-from-the-server-77][Connect to the Cassandra from the server]]
     - [[#setup-postgres-locally][Setup Postgres locally]]
     - [[#implement-connect-to-the-postgres-from-the-server][IMPLEMENT Connect to the Postgres from the server]]
     - [[#implement-modify-seeding-script-to-store-10-million-records-03][IMPLEMENT Modify seeding script to store 10 million records]]
@@ -118,6 +118,8 @@ Terminology and concepts
 
 One needs to use ~cqlsh~ to create keyspaces and tables. Instead of manually running the commands to setup a keyspace on a new system, you can run ~cqlsh -e "DESCRIBE KEYSPACE" > schema.cql~ to dump the ocommands to create the keysapce named by "KEYSPACE" to a file named schema.cql. To later setup that keyspace on a new environment run ~source schema.cql~.
 
+The [[http://cassandra.apache.org/doc/latest/operating/hardware.html][official hardware recomendations]] suggest using no less than 2 gigs for the Java heap which should be no more than 50% of the system ram and having at least 2 CPU cores. I am unfortunately restricted to a t2.small EC2 instance for deployment which only has 2 gigs of ram and 1 CPU core.
+
 * Development Journal
 
 This sections describes my process and results for this project.
@@ -184,7 +186,7 @@ CREATE TABLE overviews.overview (
 
 I exported this schema to a file for a quicker setup later by running ~cqlsh -e "DESCRIBE overviews" > overviews.cql~.
 
-*** IMPLEMENT Connect to the Cassandra from the server
+*** DONE Connect to the Cassandra from the server [7/7]
 
 Cassandra can be connected to from Node using the [[https://www.npmjs.com/package/cassandra-driver][cassandra-driver]] package.
 
@@ -193,7 +195,23 @@ The client connection requires three paramaters.
  2. The local data center which [[https://stackoverflow.com/questions/19489498/getting-cassandra-datacenter-name-in-cqlsh][StackOverflow]] informed me I can find by going into the cqlsh and running ~use system;~ followed by ~select data_center from local;~.
  3. The keyspace name
 
-Queries are stored as string and passed as parameters to the execute function of the client object. Mutliple parameters must be passed as an array and named paramters require preparing the query by passing ~{ prepare: true }~ after the paramters. Preparing the query allows for converting Javscript objects to a Cassandra type.
+Queries are stored as string and passed as parameters to the execute function of the client object. Mutliple parameters must be passed as an array and named paramters require preparing the query by passing ~{ prepare: true }~ after the paramters. Preparing the query allows for converting Javscript objects to a Cassandra type. 
+
+Numbers also have to be prepared as Javascript's 64bit float values don't directly map to Java's (and thus Cassandra's) Long values. cassandra-driver uses the [[https://www.npmjs.com/package/long][long]] package to handle values to and from Cassandra.
+
+Functions to implement:
+ - [X] save
+ - [X] count     // used by the seeding script to determine if it should run
+ - [X] retrieve
+ - [X] update
+ - [X] remove
+
+Because an INSERT is also an upsert, my save and update functions are identical (or rather update just calls save). Because it doesn't break the clients and is more performant then checking if a record exists before an update, I decided to leave it as is.
+
+Retrieve needed to wrap it's result in an array to maintain compatibility with the clients.
+
+ - [X] Confirm client code is working
+ - [X] Confirm tests pass
 
 *** DONE Setup Postgres locally
 

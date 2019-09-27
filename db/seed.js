@@ -43,8 +43,8 @@ const seedData = (numOfData) => {
 };
 
 // only seed database if there are no current documents in database
-db.count((results) => {
-    if (results === 0) {
+db.count().then((results) => {
+    if (results < 100) {
       seedData(100);
     } else {
       process.exit();

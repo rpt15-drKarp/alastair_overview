@@ -21,8 +21,17 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 app.get(`/api/overview/:gameId`, (req, res) => {
   console.log('got to overview get request in server');
-  db.retrieve(req.params.gameId, (gameInfo) => {
-    res.send(gameInfo);
+  db.retrieve(req.params.gameId).then((game) => {
+    res.status(200)
+    res.send(game)
+  }).catch((error) => {
+    /*
+    * Idealy I would check the type of error and send a
+    * useful message to client but the scope of this is
+    * to scale the backend.
+    */
+    res.sendStatus(404)
+    console.error(error)
   });
 });
 

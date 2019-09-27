@@ -77,39 +77,61 @@ const client = new cassandra.Client({ contactPoints: ['127.0.0.1'], localDataCen
 
 client.connect().then(() => console.log('Connected to Cassandra.'))
 
-const saveQuery = 'INSERT INTO overview (game_id, game) VALUES (?, ?)'
+const queries = {
+  saveOne: 'INSERT INTO overview (game_id, game) VALUES (?, ?)',
+  countAll: 'SELECT COUNT(*) FROM overview',
+  findOne: 'SELECT game FROM overview WHERE game_id = ?',
+  deleteOne: 'DELETE FROM overview WHERE game_id = ?'
+}
 
 const testGame = {
-  game_id: 1,
+  game_id: 2,
   game_name: 'Stardew_Valley',
   description: 'faker.lorem.paragraph()',
   release_date: 'faker.date.past().toISOString()',
-  developer: 'faker.company.companyName()',
+  //developer: 'faker.company.companyName()',
   publisher: 'faker.company.companyName()',
   tags: ['tag1', 'tag2', 'tag3']
 }
 
 const save = (gameInfo) => {
-  return client.execute(saveQuery, [gameInfo.game_id, gameInfo], { prepare: true })
+  return Promise.resolve(client.execute(queries.saveOne, [gameInfo.game_id, gameInfo], { prepare: true }).then((ResultSet) => {
+    return ResultSet.info
+  }))
 }
 
 const count = () => {
-  //
+  return Promise.resolve(client.execute(queries.countAll).then((ResultSet) => {
+    return ResultSet.rows[0].count
+  }))
 }
 
-const retrieve = () => {
-  //
+const retrieve = (gameId) => {
+  return Promise.resolve(client.execute(queries.findOne, [gameId], { prepare: true }).then((ResultSet) => {
+    if (!ResultSet.rows.length) {
+      throw `Game with id (${gameId}) is not in the database`
+    }
+
+    // wrap the result in an array for backwards compatibilty
+    // with the inherited project's services
+    return [ResultSet.rows[0].game]
+  }))
 }
 
-const update = () => {
-  //
+const update = (gameId, gameInfo) => {
+  // In Cassandra, an insert automatically upserts which means
+  // it will update the row if it already exists. It means
+  // that a PUT request is the same as POST request for how
+  // I have implemented this.
+  gameInfo.game_id = gameId
+  return save(gameInfo)
 }
 
-const remove = () => {
-  //
+const remove = (gameId) => {
+  return Promise.resolve(client.execute(queries.deleteOne, [gameId], { prepare: true }).then((ResultSet) => {
+    return ResultSet.info
+  }))
 }
-
-save(testGame).then((result) => console.log(result))
 
 module.exports.save = save;
 module.exports.retrieve = retrieve;
