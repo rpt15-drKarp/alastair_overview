@@ -15,7 +15,7 @@
     - [[#connect-to-the-cassandra-from-the-server-77][Connect to the Cassandra from the server]]
     - [[#setup-postgres-locally][Setup Postgres locally]]
     - [[#implement-connect-to-the-postgres-from-the-server][IMPLEMENT Connect to the Postgres from the server]]
-    - [[#implement-modify-seeding-script-to-store-10-million-records-03][IMPLEMENT Modify seeding script to store 10 million records]]
+    - [[#implement-modify-seeding-script-to-store-10-million-records-23][IMPLEMENT Modify seeding script to store 10 million records]]
     - [[#test-ensure-api-responds-within-50ms][TEST Ensure API responds within 50ms]]
     - [[#research-dbms-benchmarking][RESEARCH DBMS benchmarking]]
     - [[#implement-stress-test-using-new-relic-to-monitor][IMPLEMENT Stress test using New Relic to monitor]]
@@ -229,10 +229,18 @@ Inserting with an existing primary key updates the row.
 
 *** IMPLEMENT Connect to the Postgres from the server
 
-*** IMPLEMENT Modify seeding script to store 10 million records [0/3]
-    - [ ] Modular function for generating 10 million records
-    - [ ] Cassandra save script
+*** IMPLEMENT Modify seeding script to store 10 million records [2/3]
+    - [X] Modular function for generating 10 million records
+    - [X] Cassandra save script
     - [ ] Postgres save script
+
+Started with a humble amount of 1 million records and node ran out of memory. In order to constrain the number of promises and not blow the stack I installed [[https://www.npmjs.com/package/bluebird][bluebird]] and made use of its [[http://bluebirdjs.com/docs/api/promise.map.html][Promise.map]] function which allowed me specify the number of concurrent Promises. I also had to refactor the for loop which generated the random rows into an iterator for Promise.map and factor the body of the for loop into a helper function.
+
+After refactoring to Promise.map my seed script succesfully seeded 1 million records to a Cassandra database but it took about four and a half minutes with a concurrency value of 10. Increasing the concurrent promises to 100 only took off 30 seconds.
+
+I tried another approach  using the [[https://docs.datastax.com/en/developer/nodejs-driver/4.2/api/module.concurrent/][executeConcurrent]] function from cassandra-driver to concurrently run inserts with batch size of 10,000. This approach finished in two and a half minutes and used about 200MB less memory. Seeding a full 10 million records takes around 25 minutes.
+
+The concurrent_writes parameter in the cassandra.yaml configuration file defines how many concurrent writes can be done at once. The documentation suggests 8 * the number of cpu cores which is 32 for my machine. Since I will be deploying to a t2.small with one core I can expect it to take longer to seed once deployed. 
 
 *** TEST Ensure API responds within 50ms
 

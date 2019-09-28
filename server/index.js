@@ -23,6 +23,7 @@ app.get(`/api/overview/:gameId`, (req, res) => {
   console.log('got to overview get request in server');
   db.retrieve(req.params.gameId).then((game) => {
     res.status(200)
+    console.log(game)
     res.send(game)
   }).catch((error) => {
     /*
