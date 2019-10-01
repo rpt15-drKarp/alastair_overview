@@ -14,8 +14,8 @@
     - [[#setup-cassandra-locally][Setup Cassandra locally]]
     - [[#connect-to-the-cassandra-from-the-server-77][Connect to the Cassandra from the server]]
     - [[#setup-postgres-locally][Setup Postgres locally]]
-    - [[#implement-connect-to-the-postgres-from-the-server][IMPLEMENT Connect to the Postgres from the server]]
-    - [[#implement-modify-seeding-script-to-store-10-million-records-23][IMPLEMENT Modify seeding script to store 10 million records]]
+    - [[#connect-to-the-postgres-from-the-server-77][Connect to the Postgres from the server]]
+    - [[#implement-modify-seeding-script-to-store-10-million-records-33][IMPLEMENT Modify seeding script to store 10 million records]]
     - [[#test-ensure-api-responds-within-50ms][TEST Ensure API responds within 50ms]]
     - [[#research-dbms-benchmarking][RESEARCH DBMS benchmarking]]
     - [[#implement-stress-test-using-new-relic-to-monitor][IMPLEMENT Stress test using New Relic to monitor]]
@@ -225,24 +225,70 @@ Manually connect to Postgres by running ~psql~.
 
 I initially did not have step 2 and I tried to start the postgresql service but it would not run. Checking journalctl showed that it failed to start the database server. Some quick Googling revealed that I needed to setup the database by creating a data directory, setting the ownership to the postgres user, and initializing the database as the postgres user. Turns out there is also a Fedora package called ~postgresql-setup~ which can be used to do the same thing which is installed along with Postgres. I opted for the package.
 
-Inserting with an existing primary key updates the row.
+Running ~psql~ requires the user to have role setup so I was not able to run the shell from my user. The documentation says to first ~su - postgres~ but that cannot be done as the install process creates the local postgres user without a password. Instead I ran ~sudo -u postgres -i~ to effectively log in as that user in my shell and run ~psql~.
 
-*** IMPLEMENT Connect to the Postgres from the server
+I was unable to conenct to the Postgres database as it was using ident authentication and node-postgres seems to only use password authentication. I changed ~pg_hba.conf~ settings for host from ident auth to md5. I was still unable to connect as the default postgres role does not have a password. I ran ~psql~ and set as new password with ~ALTER USER postgress PASSWORD 'the password';~ and was finally able to connect from node-postgres.
 
-*** IMPLEMENT Modify seeding script to store 10 million records [2/3]
+I created a database with:
+#+BEGIN_SRC SQL
+CREATE DATABASE overviews;
+#+END_SRC
+and a table with:
+#+BEGIN_SRC SQL
+CREATE TABLE overviews (
+  game_id INTEGER PRIMARY KEY,
+  game_name TEXT NOT NULL,
+  description TEXT NOT NULL,
+  release_date TEXT NOT NULL,
+  developer TEXT NOT NULL,
+  publisher TEXT NOT NULL,
+  tags TEXT ARRAY
+);
+#+END_SRC
+
+*** DONE Connect to the Postgres from the server [7/7]
+
+I chose to use the [[https://www.npmjs.com/package/pg][node-postres]] package to connect to my Postgres database as Sequelize and even Knex are overkill for this project.
+
+Functions to implement:
+ - [X] save
+ - [X] count     // used by the seeding script to determine if it should run
+ - [X] retrieve
+ - [X] update
+ - [X] remove
+
+In Cassandra, the insert query handles updates automatically, allowing the user to pass the game_id and then whatever columns need to be updated. Doing in the same thing with a SQL query required building up the query by iterating through the passed in objects' keys in order to determine exactly what fields need to be updated.
+
+ - [X] Confirm client code is working
+ - [X] Confirm tests pass
+
+*** IMPLEMENT Modify seeding script to store 10 million records [3/3]
     - [X] Modular function for generating 10 million records
     - [X] Cassandra save script
-    - [ ] Postgres save script
 
 Started with a humble amount of 1 million records and node ran out of memory. In order to constrain the number of promises and not blow the stack I installed [[https://www.npmjs.com/package/bluebird][bluebird]] and made use of its [[http://bluebirdjs.com/docs/api/promise.map.html][Promise.map]] function which allowed me specify the number of concurrent Promises. I also had to refactor the for loop which generated the random rows into an iterator for Promise.map and factor the body of the for loop into a helper function.
 
 After refactoring to Promise.map my seed script succesfully seeded 1 million records to a Cassandra database but it took about four and a half minutes with a concurrency value of 10. Increasing the concurrent promises to 100 only took off 30 seconds.
 
-I tried another approach  using the [[https://docs.datastax.com/en/developer/nodejs-driver/4.2/api/module.concurrent/][executeConcurrent]] function from cassandra-driver to concurrently run inserts with batch size of 10,000. This approach finished in two and a half minutes and used about 200MB less memory. Seeding a full 10 million records takes around 25 minutes.
+I tried another approach  using the [[https://docs.datastax.com/en/developer/nodejs-driver/4.2/api/module.concurrent/][executeConcurrent]] function from cassandra-driver to concurrently run inserts with a batch size of 10,000. This approach finished in two and a half minutes and used about 200MB less memory. Seeding a full 10 million records takes around 25 minutes.
 
 The concurrent_writes parameter in the cassandra.yaml configuration file defines how many concurrent writes can be done at once. The documentation suggests 8 * the number of cpu cores which is 32 for my machine. Since I will be deploying to a t2.small with one core I can expect it to take longer to seed once deployed. 
 
+    - [X] Postgres save script
+
+The [[https://www.postgresql.org/docs/11/populate.html][official documentation]] has some tips for inserting a lot of data. Since I'm generating my seed data in code, using ~COPY~ doesn't seem lke the best option. I'm willing to wait a little longer to seed if it simplifies the process. The best approach seems to be to turn off autocommit and indexes, insert in one transaction using ~BEGIN~ at the start, ~COMMIT~ at the end, and then build the indexes. When using ~BEGIN~ and ~COMMIT~ I cannot use a conenction pool as all queries need to use the client connection to be on a single transaction. Because the inserts will be done in a single transaction, if there are any errors nothing will be added to the database, which means I wont have to drop the table if the seeding fails. Spiffy.
+
+Additionaly I want to prepare an ~INSERT~ and then use that prepared statement thereafter when seeding. [[https://github.com/brianc/node-postgres/issues/24][From the author]] of node-postgres, named queries are parsed, bound, and executed all at once, but subsequent queries issued on the same connection will skip the parsing so I don't need to do anything extra for that speedup.
+
+Using a single transaction with indexing delayed and built at the end, inserting 1 million records took four and half minutes which means 10 million would take arounf 45 minutes. I wanted to get the seeding down to under half an hour and discovered that Postgres can [[https://www.postgresql.org/docs/11/sql-insert.html][insert multiple rows]] at once. It seems the number of rows you can insert at once is limited by the query size in characters.
+
+I added a function to insert multiple rows at once using [[https://github.com/datalanche/node-pg-format][pg-format]] to format the query as node-postgress doesn't support it. pg-format didn't format array parameters correctly so I had to convert the tag array into postgres literal string before calling pg-format.
+
+The final seeding function using a single transaction, defering indexing, and inserting 1000 rows per query seeded 1 million records in 2.3 minutes. The final 10 million record seeding took 24 minutes.
+
 *** TEST Ensure API responds within 50ms
+ - [ ] Cassandra
+ - [ ] Postgres
 
 *** RESEARCH DBMS benchmarking
 

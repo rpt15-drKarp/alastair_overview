@@ -1,5 +1,6 @@
 const db = require('./index.js');
 const faker = require('faker');
+const Promise = require('bluebird')
 
 
 // add fake data to database
@@ -28,10 +29,24 @@ async function seedData (numOfData) {
     }
   }
 
-  const concurrency = 10000;
-  for (let i = 0; i < numOfData; i += concurrency) {
-    let gameInfos = Array.from(new Array(concurrency).keys()).map((x) => [i + x, makeOverview(i + x)])
-    await db.saveMultiple(gameInfos)
+  if (db.name === 'cassandra') {
+    const concurrency = 10000
+    for (let i = 0; i < numOfData; i += concurrency) {
+      let gameInfos = Array.from(new Array(concurrency).keys()).map((x) => [i + x, makeOverview(i + x)])
+      await db.saveMultiple(gameInfos)
+    }
+  } else {
+    await db.begin()
+    await db.disableIndex()
+
+    const concurrency = 1000
+    for (let i = 0; i < numOfData; i += concurrency) {
+      let gameInfos = Array.from(new Array(concurrency).keys()).map((x) => makeOverview(i + x))
+      await db.saveMultiple(gameInfos)
+    }
+
+    await db.enableIndex()
+    await db.end()
   }
 
 };
@@ -40,8 +55,8 @@ async function seedData (numOfData) {
 db.count().then((results) => {
     if (results.toString() == 0) {
       const start = Date.now();
-      seedData(1000000).then(() => {
-        console.log(`Took ${(Date.now() - start) / 1000} seconds to seed database.`);
+      seedData(10000000).then(() => {
+        console.log(`Took ${((Date.now() - start) / 1000) / 60} minutes to seed database.`);
         process.exit();
       }).catch((error) => {
         console.error(error);
