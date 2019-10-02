@@ -15,9 +15,9 @@
     - [[#connect-to-the-cassandra-from-the-server-77][Connect to the Cassandra from the server]]
     - [[#setup-postgres-locally][Setup Postgres locally]]
     - [[#connect-to-the-postgres-from-the-server-77][Connect to the Postgres from the server]]
-    - [[#implement-modify-seeding-script-to-store-10-million-records-33][IMPLEMENT Modify seeding script to store 10 million records]]
-    - [[#test-ensure-api-responds-within-50ms][TEST Ensure API responds within 50ms]]
-    - [[#research-dbms-benchmarking][RESEARCH DBMS benchmarking]]
+    - [[#modify-seeding-script-to-store-10-million-records-33][Modify seeding script to store 10 million records]]
+    - [[#ensure-api-responds-within-50ms][Ensure API responds within 50ms]]
+    - [[#dbms-benchmarking][DBMS benchmarking]]
     - [[#implement-stress-test-using-new-relic-to-monitor][IMPLEMENT Stress test using New Relic to monitor]]
     - [[#research-choose-dbms-to-move-forward-with][RESEARCH Choose DBMS to move forward with]]
   - [[#deployment][Deployment]]
@@ -262,7 +262,7 @@ In Cassandra, the insert query handles updates automatically, allowing the user 
  - [X] Confirm client code is working
  - [X] Confirm tests pass
 
-*** IMPLEMENT Modify seeding script to store 10 million records [3/3]
+*** DONE Modify seeding script to store 10 million records [3/3]
     - [X] Modular function for generating 10 million records
     - [X] Cassandra save script
 
@@ -280,23 +280,60 @@ The [[https://www.postgresql.org/docs/11/populate.html][official documentation]]
 
 Additionaly I want to prepare an ~INSERT~ and then use that prepared statement thereafter when seeding. [[https://github.com/brianc/node-postgres/issues/24][From the author]] of node-postgres, named queries are parsed, bound, and executed all at once, but subsequent queries issued on the same connection will skip the parsing so I don't need to do anything extra for that speedup.
 
-Using a single transaction with indexing delayed and built at the end, inserting 1 million records took four and half minutes which means 10 million would take arounf 45 minutes. I wanted to get the seeding down to under half an hour and discovered that Postgres can [[https://www.postgresql.org/docs/11/sql-insert.html][insert multiple rows]] at once. It seems the number of rows you can insert at once is limited by the query size in characters.
+Using a single transaction with indexing delayed and built at the end, inserting 1 million records took four and half minutes which means 10 million would take arounf 45 minutes. I wanted to get the seeding down to under half an hour and discovered that Postgres can [[https://www.postgresql.org/docs/11/sql-insert.html][insert multiple rows]] at once. It seems the number of rows you can insert at once is limited by the query size in characters and the available memory of the database.
 
 I added a function to insert multiple rows at once using [[https://github.com/datalanche/node-pg-format][pg-format]] to format the query as node-postgress doesn't support it. pg-format didn't format array parameters correctly so I had to convert the tag array into postgres literal string before calling pg-format.
 
 The final seeding function using a single transaction, defering indexing, and inserting 1000 rows per query seeded 1 million records in 2.3 minutes. The final 10 million record seeding took 24 minutes.
 
-*** TEST Ensure API responds within 50ms
- - [ ] Cassandra
- - [ ] Postgres
+*** DONE Ensure API responds within 50ms
+ - [X] Cassandra -> READ 3 - 4 ms
+ - [X] Postgres  -> READ 1 ms
 
-*** RESEARCH DBMS benchmarking
+*** DONE DBMS benchmarking
+
+I setup monitoring using [[https://rpm.newrelic.com][New Relic]] and will use [[https://github.com/httperf/httperf][httperf]] for laod testing.
+
+httperf is a command line tool and for purposes of load testing ~GET~ requests I will use it as follows and change the rate and number of connections.
+#+BEGIN_SRC sh
+httperf --server localhost \
+--port 3000 \
+--uri /5000000 \
+--num-conn 300 \
+--rate 1 \
+--timeout 5
+#+END_SRC
+
+ - ~--server~ specifies the address of the service to test
+ - ~--port~ the port the service is running on
+ - ~--uri~ the endpoint e.g. /index.html would become localhost:3000/index.html
+ - ~--num-conn~ the number of test connections to make
+ - ~--rate~ the number of connections to make per second
+ - ~--timeout~ The time in seconds for httperf to wait for a response
+
+For a post the command:
+#+BEGIN_SRC sh
+httperf --server localhost \
+--port 3000 \
+--uri /5000000 \
+--num-conn 300 \
+--rate 1 \
+--method POST \
+--wsesslog=1,0,post.txt
+--timeout 5
+#+END_SRC
+
+ - ~wsesslog~ specifies a session workload, the json contents of the post will be in post.txt. The first number is number of sessions to initiate and the second is the burst time
+ - 
+
+I want the test to run for about 5 minutes locally for initial testing to get a decent idea of what my response times are. Deployed will be much longer but I think 5 minutes is enough to determine a starting line.
+
 
 *** IMPLEMENT Stress test using New Relic to monitor
 
 | DBMS      | ROUTE |  RPS | LATENCY | ERROR RATE |
 |-----------+-------+------+---------+------------|
-| Cassandra | GET   |    1 |         |            |
+| Cassandra | GET   |    1 | 3ms     | 0.00%      |
 | Cassandra | GET   |   10 |         |            |
 | Cassandra | GET   |  100 |         |            |
 | Cassandra | GET   | 1000 |         |            |
@@ -304,10 +341,10 @@ The final seeding function using a single transaction, defering indexing, and in
 | Cassandra | POST  |   10 |         |            |
 | Cassandra | POST  |  100 |         |            |
 | Cassandra | POST  | 1000 |         |            |
-| Postgres  | GET   |    1 |         |            |
-| Postgres  | GET   |   10 |         |            |
-| Postgres  | GET   |  100 |         |            |
-| Postgres  | GET   | 1000 |         |            |
+| Postgres  | GET   |    1 | 1.03ms  |      0.00% |
+| Postgres  | GET   |   10 | 2.52ms  |      0.00% |
+| Postgres  | GET   |  100 | 0.99ms  |      0.00% |
+| Postgres  | GET   | 1000 | 1.02ms  |      0.00% |
 | Postgres  | POST  |    1 |         |            |
 | Postgres  | POST  |   10 |         |            |
 | Postgres  | POST  |  100 |         |            |
