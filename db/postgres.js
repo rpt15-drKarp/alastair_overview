@@ -18,6 +18,7 @@ const queries = {
   deleteOne: 'DELETE FROM overviews WHERE game_id = $1',
   saveMultiple: 'INSERT INTO overviews(game_id, game_name, description, release_date, developer, publisher, tags) VALUES %L'
 }
+
 const save = (gameInfo) => {
  return client.query(queries.saveOne, Object.values(gameInfo))
 }
@@ -33,7 +34,8 @@ const count = () => {
 const retrieve = (gameId) => {
   return Promise.resolve(client.query(queries.findOne, [gameId]).then(({ rows }) => {
     if (rows.length) {
-      return rows[0]
+      // wrap game in an array for compatibilty with other services
+      return rows
     }
   }))
 }

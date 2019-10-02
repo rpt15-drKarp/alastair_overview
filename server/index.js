@@ -1,3 +1,4 @@
+require('newrelic')
 const express = require('express');
 const bodyParser = require('body-parser');
 const compression = require('compression');
@@ -20,10 +21,8 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
 app.get(`/api/overview/:gameId`, (req, res) => {
-  console.log('got to overview get request in server');
   db.retrieve(req.params.gameId).then((game) => {
     res.status(200)
-    console.log(game)
     res.send(game)
   }).catch((error) => {
     /*
@@ -37,7 +36,6 @@ app.get(`/api/overview/:gameId`, (req, res) => {
 });
 
 app.post('/api/overview/', (req, res) => {
-  console.log('got to overview post request in server');
   db.save(req.body).then((result) => {
     if (!result) {
       res.status(400);
@@ -54,7 +52,6 @@ app.post('/api/overview/', (req, res) => {
 });
 
 app.put(`/api/overview/:gameId`, (req, res) => {
-  console.log('got to overview put request in server');
   db.update(req.params.gameId, req.body).then((results) => {
     res.sendStatus(200)
   }).catch((err) => {
@@ -64,7 +61,6 @@ app.put(`/api/overview/:gameId`, (req, res) => {
 });
 
 app.delete(`/api/overview/:gameId`, (req, res) => {
-  console.log('got to overview delete request in server');
   db.remove(req.params.gameId).then((results) => {
     if (!results) {
       res.sendStatus(404)
