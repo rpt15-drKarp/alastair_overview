@@ -186,6 +186,18 @@ CREATE TABLE overviews.overview (
 
 I exported this schema to a file for a quicker setup later by running ~cqlsh -e "DESCRIBE overviews" > overviews.cql~.
 
+After trying to post with 10,000,000 rows I realized that ~SELECT COUNT~ is very slow and the idea of counting rows that need to be synchronized accross several nodes probably doesn't have a straight forward query. I needed the count to increment the ~game_id~ for new games and came up with two possible solutions.
+ 1. Convince everyone to use UUIDs instead of an incrementing number
+ 2. Create a summary table in the database to store the count
+I chose the summary table to avoid impacting my peers. I created the table with the following command:
+#+BEGIN_SRC cql
+CREATE TABLE overviews.summary ( 
+    id UUID PRIMARY KEY, 
+    count int 
+);
+#+END_SRC
+I then changed my save function on the database to get the count from the summary table, insert into the overview table, and then update the count on the summary table.
+
 *** DONE Connect to the Cassandra from the server [7/7]
 
 Cassandra can be connected to from Node using the [[https://www.npmjs.com/package/cassandra-driver][cassandra-driver]] package.
