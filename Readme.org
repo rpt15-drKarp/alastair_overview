@@ -18,7 +18,7 @@
     - [[#modify-seeding-script-to-store-10-million-records-33][Modify seeding script to store 10 million records]]
     - [[#ensure-api-responds-within-50ms][Ensure API responds within 50ms]]
     - [[#dbms-benchmarking][DBMS benchmarking]]
-    - [[#implement-stress-test-using-new-relic-to-monitor][IMPLEMENT Stress test using New Relic to monitor]]
+      - [[#implement-stress-test-using-new-relic-to-monitor][IMPLEMENT Stress test using New Relic to monitor]]
     - [[#research-choose-dbms-to-move-forward-with][RESEARCH Choose DBMS to move forward with]]
   - [[#deployment][Deployment]]
     - [[#deploy-service][Deploy service]]
@@ -292,7 +292,7 @@ The final seeding function using a single transaction, defering indexing, and in
 
 *** DONE DBMS benchmarking
 
-I setup monitoring using [[https://rpm.newrelic.com][New Relic]] and will use [[https://github.com/httperf/httperf][httperf]] for laod testing.
+I setup monitoring using [[https://rpm.newrelic.com][New Relic]] and will use [[https://github.com/httperf/httperf][httperf]] for load testing.
 
 httperf is a command line tool and for purposes of load testing ~GET~ requests I will use it as follows and change the rate and number of connections.
 #+BEGIN_SRC sh
@@ -329,7 +329,7 @@ httperf --server localhost \
 I want the test to run for about 5 minutes locally for initial testing to get a decent idea of what my response times are. Deployed will be much longer but I think 5 minutes is enough to determine a starting line.
 
 
-*** IMPLEMENT Stress test using New Relic to monitor
+**** IMPLEMENT Stress test using New Relic to monitor
 
 | DBMS      | ROUTE |  RPS | LATENCY | ERROR RATE |
 |-----------+-------+------+---------+------------|
