@@ -38,16 +38,13 @@ app.get(`/api/overview/:gameId`, (req, res) => {
 app.post('/api/overview/', (req, res) => {
   db.save(req.body).then((result) => {
     if (!result) {
-      res.status(400);
-      res.send('Malformed request');
+      res.status(400).send('Malformed request');
     } else {
-      res.status(201);
-      res.set('Location', `/api/overview/${result.game_id}`);
-      res.send("Successfuly created game overview.");
+      res.set('Location', `/api/overview/${result.rows[0].game_id}`);
+      res.status(201).send('Successfuly created game overview.');
     }
   }).catch((err) => {
-    res.status(500);
-    res.send('Unable to save to database: ', err);
+    res.status(500).send('Unable to save to database: ', err);
   })
 });
 

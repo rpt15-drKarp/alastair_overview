@@ -12,15 +12,15 @@ const client = new Client({
 client.connect()
 
 const queries = {
-  saveOne: 'INSERT INTO overviews(game_id, game_name, description, release_date, developer, publisher, tags) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+  saveOne: 'INSERT INTO overviews(game_name, description, release_date, developer, publisher, tags) VALUES ($1, $2, $3, $4, $5, $6) RETURNING game_id',
   countAll: 'SELECT COUNT(*) FROM overviews',
   findOne: 'SELECT * FROM overviews WHERE game_id = $1',
   deleteOne: 'DELETE FROM overviews WHERE game_id = $1',
-  saveMultiple: 'INSERT INTO overviews(game_id, game_name, description, release_date, developer, publisher, tags) VALUES %L'
+  saveMultiple: 'INSERT INTO overviews(game_name, description, release_date, developer, publisher, tags) VALUES %L'
 }
 
 const save = (gameInfo) => {
- return client.query(queries.saveOne, Object.values(gameInfo))
+  return client.query(queries.saveOne, Object.values(gameInfo))
 }
 
 const count = () => {

@@ -12,21 +12,20 @@ client.connect().then(() => console.log('Connected to Cassandra.'))
 
 const queries = {
   saveOne: 'INSERT INTO overview (game_id, game) VALUES (?, ?)',
-  countAll: 'SELECT COUNT(*) FROM overview',
+  countAll: 'SELECT (id, count) FROM summary',
+  updateCount: 'INSERT INTO summary (id, count) VALUES (?, ?)',
   findOne: 'SELECT game FROM overview WHERE game_id = ?',
   deleteOne: 'DELETE FROM overview WHERE game_id = ?'
 }
 
 const save = (gameInfo) => {
-  return Promise.resolve(client.execute(queries.saveOne, [gameInfo.game_id, gameInfo], { prepare: true }).then((ResultSet) => {
+  return client.execute(queries.saveOne, [gameInfo.game_id, gameInfo], { prepare: true }).then((ResultSet) => {
     return ResultSet.info
-  }))
+  })
 }
 
 const count = () => {
-  return Promise.resolve(client.execute(queries.countAll).then(({ rows }) => {
-    return rows[0].count
-  }))
+  //
 }
 
 const retrieve = (gameId) => {

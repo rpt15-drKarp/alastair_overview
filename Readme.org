@@ -18,8 +18,8 @@
     - [[#modify-seeding-script-to-store-10-million-records-33][Modify seeding script to store 10 million records]]
     - [[#ensure-api-responds-within-50ms][Ensure API responds within 50ms]]
     - [[#dbms-benchmarking][DBMS benchmarking]]
-      - [[#implement-stress-test-using-new-relic-to-monitor][IMPLEMENT Stress test using New Relic to monitor]]
-    - [[#research-choose-dbms-to-move-forward-with][RESEARCH Choose DBMS to move forward with]]
+      - [[#benchmarking-stress-test-using-new-relic-to-monitor-performance][Benchmarking: stress test using New Relic to monitor performance]]
+    - [[#choose-dbms-to-move-forward-with][Choose DBMS to move forward with]]
   - [[#deployment][Deployment]]
     - [[#deploy-service][Deploy service]]
     - [[#deploy-proxy][Deploy proxy]]
@@ -248,7 +248,7 @@ CREATE DATABASE overviews;
 and a table with:
 #+BEGIN_SRC SQL
 CREATE TABLE overviews (
-  game_id INTEGER PRIMARY KEY,
+  game_id SERIAL PRIMARY KEY,
   game_name TEXT NOT NULL,
   description TEXT NOT NULL,
   release_date TEXT NOT NULL,
@@ -304,44 +304,39 @@ The final seeding function using a single transaction, defering indexing, and in
 
 *** DONE DBMS benchmarking
 
-I setup monitoring using [[https://rpm.newrelic.com][New Relic]] and will use [[https://github.com/httperf/httperf][httperf]] for load testing.
+I setup monitoring using [[https://rpm.newrelic.com][New Relic]] and originally used [[https://github.com/httperf/httperf][httperf]] for load testing but then switched to [[https://k6.io/][K6]].
 
-httperf is a command line tool and for purposes of load testing ~GET~ requests I will use it as follows and change the rate and number of connections.
-#+BEGIN_SRC sh
-httperf --server localhost \
---port 3000 \
---uri /5000000 \
---num-conn 300 \
---rate 1 \
---timeout 5
+An implementation detail of httperf is that it is limited by the number of file descriptors available on the system which is quite low by default on Fedora and MacOS. It is relatively easy to change the number of file descriptors but I decided to switch to K6 at the recommendation of some of my peers. I was able to install K6 on Fedora by using snap, ~sudo snap install k6~.
+
+K6 is configured using Javascript which makes it especially nice for configuring more complicated requests. 
+
+My POST script is: 
+#+BEGIN_SRC Javascript
+import http from 'k6/http'
+
+export default function() {
+  const url = "http://localhost:3000/api/overview/"
+  const payload = JSON.stringify({"game_name":"game","description":"game","release_date":"2019","publisher":"publisher","developer":"devloper","tags":["one","two","three"]})
+  const params = { headers: { "Content-Type": "application/json"} }
+  http.post(url, payload, params)
+}
 #+END_SRC
 
- - ~--server~ specifies the address of the service to test
- - ~--port~ the port the service is running on
- - ~--uri~ the endpoint e.g. /index.html would become localhost:3000/index.html
- - ~--num-conn~ the number of test connections to make
- - ~--rate~ the number of connections to make per second
- - ~--timeout~ The time in seconds for httperf to wait for a response
+My GET script is:
+#+BEGIN_SRC Javascript
+import http from 'k6/http'
 
-For a post the command:
-#+BEGIN_SRC sh
-httperf --server localhost \
---port 3000 \
---uri /5000000 \
---num-conn 300 \
---rate 1 \
---method POST \
---wsesslog=1,0,post.txt
---timeout 5
+export default function() {
+  const url = 'http://localhost:3000/api/overview/' + Math.floor(Math.random() * 10000000)
+  http.get(url)
+}
 #+END_SRC
 
- - ~wsesslog~ specifies a session workload, the json contents of the post will be in post.txt. The first number is number of sessions to initiate and the second is the burst time
- - 
+To execute the script I call k6 from the shell in the form ~k6 run --vus X --duration Ts script.js~ where X is the number of concurrent connections and T is the duration in seconds.
 
-I want the test to run for about 5 minutes locally for initial testing to get a decent idea of what my response times are. Deployed will be much longer but I think 5 minutes is enough to determine a starting line.
+The GET script gets from a random index in case something in the stack is smarter than me with caching and throwing off my inital results.
 
-
-**** IMPLEMENT Stress test using New Relic to monitor
+**** DONE Benchmarking: stress test using New Relic to monitor performance
 
 | DBMS      | ROUTE |  RPS | LATENCY | ERROR RATE |
 |-----------+-------+------+---------+------------|
@@ -349,29 +344,31 @@ I want the test to run for about 5 minutes locally for initial testing to get a 
 | Cassandra | GET   |   10 | 2.10ms  |      0.00% |
 | Cassandra | GET   |  100 | 1.21ms  |      0.00% |
 | Cassandra | GET   | 1000 | 5.31ms  |      0.00% |
-| Cassandra | POST  |    1 |         |            |
-| Cassandra | POST  |   10 |         |            |
-| Cassandra | POST  |  100 |         |            |
-| Cassandra | POST  | 1000 |         |            |
+| Cassandra | POST  |    1 | 6.20ms  |      0.00% |
+| Cassandra | POST  |   10 | 9.80ms  |      0.00% |
+| Cassandra | POST  |  100 | 19.3ms  |      0.00% |
+| Cassandra | POST  | 1000 | 133ms   |      0.00% |
 | Postgres  | GET   |    1 | 1.03ms  |      0.00% |
-| Postgres  | GET   |   10 | 2.52ms  |      0.00% |
+| Postgres  | GET   |   10 | 1.52ms  |      0.00% |
 | Postgres  | GET   |  100 | 0.99ms  |      0.00% |
 | Postgres  | GET   | 1000 | 1.02ms  |      0.00% |
-| Postgres  | POST  |    1 |         |            |
-| Postgres  | POST  |   10 |         |            |
-| Postgres  | POST  |  100 |         |            |
-| Postgres  | POST  | 1000 |         |            |
+| Postgres  | POST  |    1 | 7.8ms   |      0.00% |
+| Postgres  | POST  |   10 | 10.2ms  |      0.00% |
+| Postgres  | POST  |  100 | 26.1ms  |      0.00% |
+| Postgres  | POST  | 1000 | 127ms   |      0.00% |
 
-*** RESEARCH Choose DBMS to move forward with
+*** DONE Choose DBMS to move forward with
 
+The specification of an auto incrementing integer id does not fit well into a distributed database as each node must be synchronized for those inserts. Changing the ids to be UUIDs would be a better schema for Cassandra but would breaking existing services for other teams and is therefore, off the table. A post with Cassandra therefore involves three operations instead of one: reading from a summary table, inserting into overview table, and then updating the summary table.
+
+Due to the read performance of Postgres, the addition schema complexity for Cassandra imposed by the project specs, and the prevalence of SQL in my job market, I chose to go forward with Postgres for deployment.
+ 
 ** Deployment
-
 *** Deploy service
 
 *** Deploy proxy
 
 *** Seed deployed database
-
 *** Stress test service
 
 *** Stress test proxy
